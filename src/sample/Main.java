@@ -153,16 +153,7 @@ public class Main extends Application {
         primaryStage.setScene(s);
         primaryStage.show();
 
-        System.out.println("Do you want to transform again?");
-        char transform = scan.next().charAt(0);
-        if (transform == 'y') {
-            primaryStage.close();
-            transforming = true;
-        }
-        else{
-            transforming = false;
-            primaryStage.close();
-        }
+
 
 
     }
