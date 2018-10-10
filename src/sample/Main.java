@@ -1,28 +1,22 @@
 package sample;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
+import javafx.event.ActionEvent;
 import javafx.scene.Group;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelReader;
+import javafx.scene.control.Button;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.scene.canvas.Canvas;
-
-import java.awt.*;
 import java.io.*;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.Scanner;
+
 
 public class Main extends Application {
 
     PixelWriter pixelWriter;
+    PixelWriter pixelWriter2;
     static double[][] matrixOfPoints;
     double[][] concatMatrix;
     static boolean hasPoints = false;
@@ -58,31 +52,17 @@ public class Main extends Application {
         }
         numOfPoints = matrixOfPoints.length;
 
-        //Test printing out matrixOfPoints
-        for(int row=0;row<numOfPoints;row++){
-            for(int col=0;col<2;col++){
-                System.out.print(matrixOfPoints[row][col] + " ");
-                if(col ==1){
-                    System.out.println();
-                }
+        double[][] originalMatrix = new double[numOfPoints][3];
+
+        for(int row = 0;row<matrixOfPoints.length;row++){
+            for(int col = 0;col<matrixOfPoints[0].length;col++){
+                originalMatrix[row][col] = matrixOfPoints[row][col];
             }
         }
 
 
-
         char assignment;
         boolean flag = true;
-        concatMatrix = new double[numOfPoints][3];
-        for(int row=0;row<concatMatrix.length;row++){
-            for(int col = 0;col<concatMatrix[0].length;col++){
-                if(row==col){
-                    concatMatrix[row][col] = 1;
-                }
-                else{
-                    concatMatrix[row][col] = 0;
-                }
-            }
-        }//making identity matrix
 
         while (flag == true) {
 
@@ -99,23 +79,24 @@ public class Main extends Application {
                     break;
 
                 case 's':
-                    System.out.println("Sx: ");
+                    System.out.print("Sx: ");
                     int Sx = scan.nextInt();
-                    System.out.println("Sy: ");
+                    System.out.print("Sy: ");
                     int Sy = scan.nextInt();
-                    System.out.println("Cx: ");
+                    System.out.print("Cx: ");
                     int Cx = scan.nextInt();
-                    System.out.println("Cy: ");
+                    System.out.print("Cy: ");
                     int Cy = scan.nextInt();
                     Scale(Sx, Sy, Cx, Cy, matrixOfPoints);
                     break;
 
                 case 'r':
-                    System.out.println("Theta: ");
-                    int theta = scan.nextInt();
-                    System.out.println("Cx: ");
+                    System.out.print("Theta: ");
+                    double theta = scan.nextInt();
+                    theta = Math.toRadians(theta);
+                    System.out.print("Cx: ");
                     Cx = scan.nextInt();
-                    System.out.println("Cy: ");
+                    System.out.print("Cy: ");
                     Cy = scan.nextInt();
                     Rotate(theta, Cx, Cy, matrixOfPoints);
                     break;
@@ -140,20 +121,40 @@ public class Main extends Application {
             OutputLines(file, numOfPoints);
         }
 
+        Button btn = new Button();
+        btn.setText("Show Original");
+        btn.setOnAction((ActionEvent event) -> {
+            Group root2 = new Group();
+            Scene secondScene = new Scene(root2, 1024, 768, Color.WHITE);
+
+            final Canvas canvas2 = new Canvas(1024, 768);
+
+            pixelWriter2 = canvas2.getGraphicsContext2D().getPixelWriter();
+            DisplayPixels(originalMatrix, 12, pixelWriter2);
+
+
+            root2.getChildren().add(canvas2);
+
+            Stage secondStage = new Stage();
+            secondStage.setTitle("Original Polygon");
+            secondStage.setScene(secondScene);
+
+            secondStage.show();
+        });
+
 
         Group root = new Group();
-        Scene s = new Scene(root, 500, 500, Color.WHITE);
-        final Canvas canvas = new Canvas(500, 500);
+        Scene s = new Scene(root, 1024, 768, Color.WHITE);
+        final Canvas canvas = new Canvas(1024, 768);
 
         pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();
-        DisplayPixels(matrixOfPoints, numOfPoints);
+        DisplayPixels(matrixOfPoints, numOfPoints, pixelWriter);
 
         root.getChildren().add(canvas);
+        root.getChildren().add(btn);
         primaryStage.setTitle("Homework 2: CSCI 4810");
         primaryStage.setScene(s);
         primaryStage.show();
-
-
 
 
     }
@@ -188,12 +189,14 @@ public class Main extends Application {
 
     public double[][] BasicRotate(double angle, double[][] matrix){
         for(int row=0;row<matrix.length;row++){
+            double x = matrix[row][0];
+            double y = matrix[row][1];
             for(int col = 0;col<matrix[0].length;col++){
                 if(col==0){
-                    matrix[row][col] = matrix[row][col]*Math.cos(angle) + matrix[row][col+1]*Math.sin(angle);
+                    matrix[row][col] = x*Math.cos(angle) + y*Math.sin(angle);
                 }
                 if(col==1){
-                    matrix[row][col] = -matrix[row][col-1]*Math.sin(angle) + matrix[row][col]*Math.cos(angle);
+                    matrix[row][col] = x*-Math.sin(angle) + y*Math.cos(angle);
                 }
             }
         }
@@ -226,7 +229,7 @@ public class Main extends Application {
 
     }
 
-    public void Rotate(int angle, int Cx, int Cy, double[][] matrix){
+    public void Rotate(double angle, int Cx, int Cy, double[][] matrix){
 
         //making and multiplying matrices
         for (int iterator = 0; iterator < matrix.length; iterator++){
@@ -262,7 +265,7 @@ public class Main extends Application {
             double[][] newMatrix = new double[1][3];
             for (int row = iterator; row < iterator + 1; row++) {
                 for (int col = 0; col < 2; col++) {
-                    newMatrix[row][col] = datalines[row][col];
+                    newMatrix[0][col] = datalines[row][col];
                 }
             }
 
@@ -273,7 +276,7 @@ public class Main extends Application {
             //inserting back into datalines
             for (int row = iterator; row < iterator + 1; row++) {
                 for (int col = 0; col < 2; col++) {
-                    datalines[row][col] = newMatrix[row][col];
+                    datalines[row][col] = newMatrix[0][col];
                 }
             }
         }
@@ -281,14 +284,14 @@ public class Main extends Application {
         return datalines;
     }
 
-    public void DisplayPixels(double[][] datalines, int num){
+    public void DisplayPixels(double[][] datalines, int num, PixelWriter pw){
 
         for(int i=0;i<datalines.length;i++){
             if(i+1 != datalines.length){
-                BresenhamAlg((int)datalines[i][0], (int)datalines[i][1], (int)datalines[i+1][0], (int)datalines[i+1][1]);
+                BresenhamAlg((int)datalines[i][0], (int)datalines[i][1], (int)datalines[i+1][0], (int)datalines[i+1][1], pw);
             }
             if(i==datalines.length-1){
-                BresenhamAlg((int)datalines[i][0], (int)datalines[i][1], (int)datalines[0][0], (int)datalines[0][1]);
+                BresenhamAlg((int)datalines[i][0], (int)datalines[i][1], (int)datalines[0][0], (int)datalines[0][1], pw);
             }
 
         }
@@ -366,7 +369,7 @@ public class Main extends Application {
         }
     }
 
-    public void BresenhamAlg(int x0, int y0, int x1, int y1){
+    public void BresenhamAlg(int x0, int y0, int x1, int y1, PixelWriter pw){
         //straight from https://en.wikipedia.org/wiki/Bresenham's_line_algorithm
         //and https://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#Java
         int deltax = Math.abs(x1-x0);
@@ -382,27 +385,27 @@ public class Main extends Application {
         //vertical line
         if(deltax==0){
             for(int i=y0;i<y1;i++){
-                pixelWriter.setColor(tempx,i,Color.BLUE);
+                pw.setColor(tempx,i,Color.BLUE);
             }
             for(int i=y0;i>y1;i--){
-                pixelWriter.setColor(tempx,i,Color.BLUE);
+                pw.setColor(tempx,i,Color.BLUE);
             }
             return;
         }
         //horizontal line
         if (deltay == 0) {
             for (int i=x0;i<x1;i++){
-                pixelWriter.setColor(i,tempy,Color.BLUE);
+                pw.setColor(i,tempy,Color.BLUE);
             }
             for (int i=x0;i>x1;i--){
-                pixelWriter.setColor(i,tempy,Color.BLUE);
+                pw.setColor(i,tempy,Color.BLUE);
             }
             return;
         }
 
         if(deltax >= deltay) {
             while(true) {
-                pixelWriter.setColor(tempx, tempy, Color.BLUE);
+                pw.setColor(tempx, tempy, Color.BLUE);
                 if(tempx==x1)
                     break;
                 tempx += xincrement;
@@ -415,7 +418,7 @@ public class Main extends Application {
             }
         }else {
             while(true) {
-                pixelWriter.setColor(tempx,tempy, Color.BLUE);
+                pw.setColor(tempx,tempy, Color.BLUE);
                 if(tempy == y1)
                     break;
                 tempy += yincrement;
